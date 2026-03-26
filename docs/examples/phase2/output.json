@@ -1,0 +1,45 @@
+{
+  "pages": [
+    {
+      "page": 1,
+      "full_text": "Project Specifications\n\nBuilding A is located on the north side of the site.\nTotal floor area is 2500 square feet.\nConstruction start date is March 2025.\n\nMaterial Schedule\n\nNotes:\nAll measurements are approximate.\nVerify dimensions on site before ordering.",
+      "text_regions": [
+        {
+          "text": "Total Construction Building Project floor A area...",
+          "bbox": [50, 34, 444, 124],
+          "orientation": "horizontal",
+          "block_count": 26
+        },
+        {
+          "text": "Material Schedule",
+          "bbox": [52, 194, 282, 23],
+          "orientation": "horizontal",
+          "block_count": 2
+        }
+      ],
+      "tables": [
+        {
+          "bbox": [51, 241, 438, 138],
+          "rows": 4,
+          "cols": 3,
+          "cells": [
+            ["Material", "Quantity", "Unit"],
+            ["Concrete", "150", "cubic yards"],
+            ["Steel Rebar", "2000", "linear feet"],
+            ["Lumber", "500", "board feet"]
+          ]
+        }
+      ],
+      "stats": {
+        "text_blocks": 39,
+        "text_regions": 3,
+        "tables": 1
+      }
+    }
+  ],
+  "summary": {
+    "total_pages": 1,
+    "total_text_blocks": 39,
+    "total_tables": 1
+  }
+}

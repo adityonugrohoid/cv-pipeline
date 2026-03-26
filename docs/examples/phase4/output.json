@@ -1,0 +1,33 @@
+{
+  "pages": [
+    {
+      "page": 1,
+      "shapes": [
+        { "shape_type": "rectangle", "bbox": [884, 1834, 733, 233], "center": [1250, 1950], "properties": { "area": 169785.0 } },
+        { "shape_type": "circle", "bbox": [588, 684, 73, 73], "center": [624, 720], "properties": { "radius": 36 } }
+      ],
+      "text": {
+        "full_text": "Floor Plan \u2014 Building A\nOffice 101\n25'-0\" x 20'-0\"...",
+        "text_blocks": 56,
+        "text_regions": [
+          { "text": "Floor Plan \u2014 Building A", "bbox": [320, 34, 560, 50] }
+        ],
+        "tables": [
+          { "rows": 4, "cols": 3, "cells": [["Material", "Qty", "Unit"], ["Concrete", "150", "cu yd"]] }
+        ]
+      },
+      "symbols": [
+        { "class": "door_swing", "confidence": 0.94, "bbox": [362, 130, 68, 61] },
+        { "class": "dimension_line", "confidence": 0.96, "bbox": [280, 67, 52, 116] }
+      ],
+      "timing": { "shapes_sec": 0.25, "text_sec": 3.74, "symbols_sec": 5.53 },
+      "errors": {}
+    }
+  ],
+  "summary": {
+    "total_pages": 1,
+    "shapes": { "total": 87, "by_type": { "rectangle": 8, "circle": 4, "polygon": 75 } },
+    "text": { "total_blocks": 56, "total_tables": 1 },
+    "symbols": { "total": 15, "by_class": { "door_swing": 2, "dimension_line": 10, "arrow": 1, "electrical_outlet": 2 } }
+  }
+}

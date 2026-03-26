@@ -1,0 +1,45 @@
+{
+  "shapes": [
+    {
+      "shape_type": "triangle",
+      "center_x": 150,
+      "center_y": 433,
+      "width": 213,
+      "height": 179,
+      "confidence": 1.0,
+      "vertices": 3,
+      "area": 20841.0
+    },
+    {
+      "shape_type": "circle",
+      "center_x": 400,
+      "center_y": 129,
+      "width": 173,
+      "height": 173,
+      "confidence": 1.0,
+      "radius": 86,
+      "area": 23298.0,
+      "circularity": 0.898
+    },
+    {
+      "shape_type": "rectangle",
+      "center_x": 125,
+      "center_y": 100,
+      "width": 163,
+      "height": 109,
+      "confidence": 1.0,
+      "area": 18100.0,
+      "aspect_ratio": 1.495
+    }
+  ],
+  "summary": {
+    "total": 8,
+    "by_type": {
+      "triangle": 2,
+      "square": 2,
+      "polygon": 1,
+      "circle": 2,
+      "rectangle": 1
+    }
+  }
+}

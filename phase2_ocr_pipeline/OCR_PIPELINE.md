@@ -34,28 +34,41 @@ Just like Phase 1's shape image, the test image (`assets/sample_text.png`) is a 
 
 **cli.py** — The front door. Like Phase 1, this ties everything together into a command you can run from a terminal. It also handles PDF conversion (turning PDF pages into images before processing) and includes a generator that creates the sample test image.
 
-## What the Output Looks Like
+## Example: Input and Output
 
-The JSON output has this structure (abbreviated):
+### Input
 
-```
+The sample image (`assets/sample_text.png`) contains a project specification paragraph, a material schedule table, and notes — all rendered in clean fonts on a white background.
+
+![Sample input image with text and a table](../docs/examples/phase2/input.png)
+
+### Output — Structured JSON
+
+The pipeline extracts full text, groups it into regions with bounding boxes, and parses the table into rows and columns.
+
+```json
 {
   "pages": [
     {
       "page": 1,
-      "full_text": "Project Specifications\n\nBuilding A is located...",
+      "full_text": "Project Specifications\n\nBuilding A is located on the north side...",
       "text_regions": [
         {
-          "text": "Project Specifications Building A is located...",
+          "text": "Total Construction Building Project floor A area...",
           "bbox": [50, 34, 444, 124],
           "orientation": "horizontal",
           "block_count": 26
+        },
+        {
+          "text": "Material Schedule",
+          "bbox": [52, 194, 282, 23],
+          "orientation": "horizontal",
+          "block_count": 2
         }
       ],
       "tables": [
         {
-          "rows": 4,
-          "cols": 3,
+          "rows": 4, "cols": 3,
           "cells": [
             ["Material", "Quantity", "Unit"],
             ["Concrete", "150", "cubic yards"],
@@ -63,7 +76,8 @@ The JSON output has this structure (abbreviated):
             ["Lumber", "500", "board feet"]
           ]
         }
-      ]
+      ],
+      "stats": { "text_blocks": 39, "text_regions": 3, "tables": 1 }
     }
   ],
   "summary": { "total_pages": 1, "total_text_blocks": 39, "total_tables": 1 }
@@ -71,6 +85,8 @@ The JSON output has this structure (abbreviated):
 ```
 
 The `full_text` gives you everything on the page as plain text. The `text_regions` tell you where each block of text sits. The `tables` give you cell-by-cell contents in row/column order — ready to drop into a spreadsheet.
+
+> Full output: [`docs/examples/phase2/output.json`](../docs/examples/phase2/output.json)
 
 ## Key Concepts Explained
 

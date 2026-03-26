@@ -34,26 +34,50 @@ Real construction blueprints with hand-labeled symbols would be ideal, but colle
 
 **cli.py** — The front door. A command-line interface that lets you run any step: generate a dataset, train the model, evaluate it, or detect symbols in an image.
 
-## What the Output Looks Like
+## Example: Input and Output
 
-**Detection JSON** — a list of found symbols:
-```
+### Input
+
+A synthetic validation image containing randomly placed construction symbols (arrows, dimension lines, circles with X, door swings, electrical outlets) on a noisy near-white background.
+
+![Sample input image with construction symbols](../docs/examples/phase3/input.png)
+
+### Output — Annotated Image
+
+The trained model draws color-coded bounding boxes with class labels and confidence scores on each detected symbol.
+
+![Annotated output with YOLO detections highlighted](../docs/examples/phase3/output_annotated.png)
+
+### Output — Detection JSON
+
+Each detection includes the class name, confidence score, bounding box `[x, y, w, h]`, and center point.
+
+```json
 [
   { "class": "electrical_outlet", "confidence": 0.98, "bbox": [108, 59, 43, 43], "center": [129, 80] },
-  { "class": "dimension_line", "confidence": 0.96, "bbox": [280, 67, 52, 116], "center": [306, 125] },
-  { "class": "arrow", "confidence": 0.93, "bbox": [113, 471, 92, 55], "center": [159, 498] }
+  { "class": "dimension_line",    "confidence": 0.96, "bbox": [280, 67, 52, 116], "center": [306, 125] },
+  { "class": "door_swing",        "confidence": 0.94, "bbox": [362, 130, 68, 61], "center": [396, 160] },
+  { "class": "arrow",             "confidence": 0.93, "bbox": [113, 471, 92, 55], "center": [159, 498] }
 ]
 ```
 
-**Evaluation metrics** — the model's report card:
+> Full output: [`docs/examples/phase3/output.json`](../docs/examples/phase3/output.json)
+
+### Evaluation Metrics
+
+The model's report card after 20 epochs on the synthetic dataset:
+
 ```
 mAP@50: 0.992    mAP@50-95: 0.898
+
 arrow:              P=1.000  R=0.956  AP50=0.994
 dimension_line:     P=1.000  R=1.000  AP50=0.995
 circle_x:           P=1.000  R=1.000  AP50=0.995
 door_swing:         P=0.989  R=0.968  AP50=0.982
 electrical_outlet:  P=1.000  R=1.000  AP50=0.995
 ```
+
+> Full metrics: [`docs/examples/phase3/metrics.json`](../docs/examples/phase3/metrics.json)
 
 ## Key Concepts Explained
 

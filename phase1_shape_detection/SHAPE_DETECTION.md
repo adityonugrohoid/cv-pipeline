@@ -42,35 +42,54 @@ The process goes like this:
 
 **cli.py** — The front door. This is how you actually run the tool from a terminal. You type a command, point it at an image file, and tell it where to save the results. It ties the other three files together: it calls the detector, then the annotator, then the exporter. It also has a "generate" mode that creates a sample test image with known shapes so you can try it out without needing your own image.
 
-## What the Output Looks Like
+## Example: Input and Output
 
-**The annotated image** is a copy of your original picture with colored overlays. Each shape gets a bounding box (a rectangle drawn around it), a red center dot, and a text label naming the shape and its size.
+### Input
 
-**The JSON file** is a structured list that looks like this (abbreviated):
+The sample image (`assets/sample_shapes.png`) contains 8 shapes drawn in distinct colors on a white background: 2 rectangles, 2 circles, 2 triangles, 1 square, and 1 pentagon.
 
-```
+![Sample input image with colored geometric shapes](../docs/examples/phase1/input.png)
+
+### Output — Annotated Image
+
+The detector draws color-coded bounding boxes, red center dots, and dimension labels on each detected shape.
+
+![Annotated output with detected shapes highlighted](../docs/examples/phase1/output_annotated.png)
+
+### Output — Structured JSON
+
+Each shape gets a report card: type, location, dimensions, and shape-specific properties. The summary gives a quick count by type.
+
+```json
 {
   "shapes": [
     {
-      "shape_type": "circle",
-      "center_x": 400,
-      "center_y": 129,
-      "width": 173,
-      "height": 173,
-      "radius": 86,
-      "area": 23298.0,
-      "confidence": 1.0
+      "shape_type": "triangle",
+      "center_x": 150, "center_y": 433,
+      "width": 213, "height": 179,
+      "confidence": 1.0, "vertices": 3, "area": 20841.0
     },
-    ...
+    {
+      "shape_type": "circle",
+      "center_x": 400, "center_y": 129,
+      "width": 173, "height": 173,
+      "confidence": 1.0, "radius": 86, "area": 23298.0, "circularity": 0.898
+    },
+    {
+      "shape_type": "rectangle",
+      "center_x": 125, "center_y": 100,
+      "width": 163, "height": 109,
+      "confidence": 1.0, "area": 18100.0, "aspect_ratio": 1.495
+    }
   ],
   "summary": {
     "total": 8,
-    "by_type": { "triangle": 2, "circle": 2, "rectangle": 1, "square": 2, "polygon": 1 }
+    "by_type": { "triangle": 2, "square": 2, "polygon": 1, "circle": 2, "rectangle": 1 }
   }
 }
 ```
 
-Each shape entry tells you what it is, where it is (center coordinates and bounding box), how big it is (width, height, area), and shape-specific details (radius for circles, corner count for polygons). The summary at the bottom gives you a quick count.
+> Full output: [`docs/examples/phase1/output.json`](../docs/examples/phase1/output.json) (3 of 8 shapes shown above)
 
 ## Key Concepts Explained
 
