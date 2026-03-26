@@ -9,7 +9,7 @@
 | 1 | Shape Detection | Done | [#1](https://github.com/adityonugrohoid/cv-pipeline/pull/1) | detector.py, annotator.py, export.py, cli.py | 17 passing |
 | 2 | OCR Pipeline | Done | [#3](https://github.com/adityonugrohoid/cv-pipeline/pull/3) | preprocess.py, ocr_engine.py, text_regions.py, table_detector.py, cli.py | 18 passing |
 | 3 | YOLO Detection | Done | [#4](https://github.com/adityonugrohoid/cv-pipeline/pull/4) | dataset.py, train.py, evaluate.py, detect.py, visualize.py, cli.py | 13 passing |
-| 4 | Blueprint Analyzer | Not started | — | — | — |
+| 4 | Blueprint Analyzer | Done | [#5](https://github.com/adityonugrohoid/cv-pipeline/pull/5) | pdf_handler.py, shape_layer.py, text_layer.py, symbol_layer.py, pipeline.py, report.py, serve.py, cli.py | 18 passing |
 
 ## Phase 1 — Completed
 
@@ -75,6 +75,32 @@
 - Best class: circle_x (AP50=0.995, mAP50-95=0.984)
 - Hardest class: arrow (AP50=0.994, mAP50-95=0.828) — expected, arrows vary most in orientation
 
-## What's Next
+## Phase 4 — Completed
 
-Phase 4: Blueprint Analyzer (Capstone) — multi-stage orchestrator combining shape detection, OCR, and YOLO detection into a unified document analysis pipeline.
+**What was built:**
+- PDF handler: pdf2image conversion with configurable DPI
+- Three pipeline layers wrapping Phase 1 (shapes), Phase 2 (text/OCR), Phase 3 (YOLO symbols)
+- Pipeline orchestrator with per-stage timing, structured logging, and graceful failure handling
+- Report generator: page-level detail + summary aggregation (shapes by type, text blocks, tables, symbols by class)
+- FastAPI server: POST /analyze (upload PDF → JSON report), GET /health, Swagger UI at /docs
+- CLI: `python -m phase4_blueprint_analyzer.cli analyze --input blueprint.pdf --output report.json`
+- Sample blueprint PDF with room outlines, dimension lines, door swings, electrical outlets, text labels, and material table
+- OVERVIEW.md explaining the module in plain language
+- Root README.md covering all 4 phases
+
+**Key decisions:**
+- Each stage runs independently — errors are caught and logged, not propagated
+- Symbol layer returns empty list (not error) when YOLO weights missing
+- Timing per stage for observability
+- Report structure: pages[] with shapes/text/symbols per page, plus summary with totals
+- FastAPI uses temp file for PDF upload, cleans up after processing
+
+**Pipeline results on sample blueprint:**
+- Shapes: 87 detected (8 rectangles, 4 circles, 74 polygons, 1 triangle)
+- Text: 56 blocks, 15 regions, 1 table
+- Symbols: 15 YOLO detections (10 dimension_line, 2 door_swing, 2 electrical_outlet, 1 arrow)
+- Timing: shapes 0.25s, text 3.74s, symbols 5.53s
+
+## Project Complete
+
+All four phases built, tested (66 tests passing), documented, and merged. The pipeline decomposes blueprint understanding into specialized sub-tasks — geometry, text, symbols — composed by a multi-stage orchestrator, mirroring production CV systems for technical document analysis.
