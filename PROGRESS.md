@@ -8,7 +8,7 @@
 |-------|------|--------|----|-----------|-------|
 | 1 | Shape Detection | Done | [#1](https://github.com/adityonugrohoid/cv-pipeline/pull/1) | detector.py, annotator.py, export.py, cli.py | 17 passing |
 | 2 | OCR Pipeline | Done | [#3](https://github.com/adityonugrohoid/cv-pipeline/pull/3) | preprocess.py, ocr_engine.py, text_regions.py, table_detector.py, cli.py | 18 passing |
-| 3 | YOLO Detection | Not started | — | — | — |
+| 3 | YOLO Detection | Done | [#4](https://github.com/adityonugrohoid/cv-pipeline/pull/4) | dataset.py, train.py, evaluate.py, detect.py, visualize.py, cli.py | 13 passing |
 | 4 | Blueprint Analyzer | Not started | — | — | — |
 
 ## Phase 1 — Completed
@@ -51,6 +51,30 @@
 - Full text: 100% — all words, numbers, and phrases extracted correctly
 - Table: 4 rows x 3 cols, all 12 cells match exactly (Material/Quantity/Unit headers + 3 data rows)
 
+## Phase 3 — Completed
+
+**What was built:**
+- Synthetic dataset generator: 200 images with 5 construction symbol classes (arrow, dimension_line, circle_x, door_swing, electrical_outlet), 80/20 train/val split, YOLO-format labels, data.yaml
+- YOLOv8n fine-tuning: 20 epochs on NVIDIA RTX 4060, completed in ~1.5 minutes
+- Evaluation: mAP@50, mAP@50-95, per-class precision/recall, confusion matrix
+- Inference with NMS and confidence thresholding, returning `Detection` dataclass
+- Visualization with color-coded class labels and confidence scores
+- CLI: `python -m phase3_yolo_detection.cli {generate,train,evaluate,detect}`
+- OVERVIEW.md explaining the module in plain language
+
+**Key decisions:**
+- 5 construction-specific symbol classes (arrows, dimension lines, circle-X, door swings, electrical outlets) rather than generic shapes
+- YOLOv8n (nano) for speed — converges in 20 epochs on synthetic data
+- Used `model.trainer.save_dir` to find weights reliably (ultralytics nests output paths)
+- Synthetic dataset with slightly noisy backgrounds and randomized symbol placement for variety
+- Tests that require trained weights use `pytest.skip()` when weights are unavailable
+
+**Model performance:**
+- mAP@50: 0.992, mAP@50-95: 0.898
+- All 5 classes: precision > 0.98, recall > 0.95
+- Best class: circle_x (AP50=0.995, mAP50-95=0.984)
+- Hardest class: arrow (AP50=0.994, mAP50-95=0.828) — expected, arrows vary most in orientation
+
 ## What's Next
 
-Phase 3: YOLO Object Detection — synthetic dataset generation, YOLOv8n fine-tuning, evaluation metrics, and inference CLI.
+Phase 4: Blueprint Analyzer (Capstone) — multi-stage orchestrator combining shape detection, OCR, and YOLO detection into a unified document analysis pipeline.
