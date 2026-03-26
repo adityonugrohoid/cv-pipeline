@@ -22,12 +22,23 @@
 - **Detection approach:** Color segmentation → per-color binary mask → contour tracing → vertex counting + circularity. Canny edge fallback for monochrome images.
 - **Key fix during build:** Morphological closing + contour flood-fill instead of raw dilation — raw dilation was rounding triangle tips (adding a 4th vertex) and leaving circle rings unfilled (breaking circularity calculation)
 
+## Phase 2: OCR Pipeline — Completed
+
+- **PR:** [#3](https://github.com/adityonugrohoid/cv-pipeline/pull/3), merged to main
+- **Modules:** preprocess.py, ocr_engine.py, text_regions.py, table_detector.py, cli.py, __main__.py
+- **Tests:** 18 passing (test_preprocess.py, test_ocr_engine.py)
+- **Sample image:** `assets/sample_text.png` — title, 3 paragraphs, 4x3 table, 2 notes lines
+- **Core dataclasses:** `TextBlock` (text, bbox, confidence), `TextRegion` (text, bbox, blocks, orientation), `Table` (bbox, rows, cols, cells)
+- **Pipeline flow:** grayscale → denoise → deskew → Otsu threshold → Tesseract OCR → region grouping → table detection
+- **System deps:** tesseract-ocr, poppler-utils (for PDF support)
+- **OCR accuracy:** 100% on sample image (all text, all 12 table cells exact match)
+
 ## Conventions
 
 - Type hints on all functions
 - Google-style docstrings
 - `logging` module, never `print`, in library code
-- Dataclasses for structured returns (Shape, and future: TextBlock, Detection)
+- Dataclasses for structured returns (Shape, TextBlock, TextRegion, Table, and future: Detection)
 - Each phase gets an OVERVIEW.md explaining it in plain layman terms
 - Each phase is independently runnable via its CLI (`python -m phaseN_*.cli`)
 
