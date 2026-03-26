@@ -45,6 +45,16 @@
 - **Performance:** mAP@50=0.992, mAP@50-95=0.898, all classes P>0.98 R>0.95
 - **Key fix during build:** ultralytics nests `save_dir` unpredictably — used `model.trainer.save_dir` instead of hardcoded `project/name` path to find weights
 
+## Phase 4: Blueprint Analyzer (Capstone) — Completed
+
+- **PR:** [#5](https://github.com/adityonugrohoid/cv-pipeline/pull/5), merged to main
+- **Modules:** pdf_handler.py, shape_layer.py, text_layer.py, symbol_layer.py, pipeline.py, report.py, serve.py, cli.py, __main__.py
+- **Tests:** 18 passing (test_pipeline.py, test_report.py)
+- **Sample PDF:** `assets/sample_blueprint.pdf` — floor plan with rooms, dimension lines, doors, outlets, text labels, material table
+- **Pipeline output:** 87 shapes, 56 text blocks, 1 table, 15 YOLO symbols on sample blueprint
+- **API:** FastAPI at :8000 — POST /analyze (upload PDF), GET /health
+- **Key design:** Each stage runs independently with graceful failure — symbol layer returns [] if weights missing, errors captured in report
+
 ## Conventions
 
 - Type hints on all functions
