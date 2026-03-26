@@ -1,0 +1,27 @@
+# Core CV
+opencv-python
+numpy
+Pillow
+
+# OCR
+pytesseract
+pdf2image
+
+# YOLO / Deep Learning
+ultralytics
+torch
+torchvision
+
+# Serving
+fastapi
+uvicorn
+python-multipart
+
+# Report generation
+reportlab
+
+# Testing
+pytest
+
+# Utilities
+matplotlib
