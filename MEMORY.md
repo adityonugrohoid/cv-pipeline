@@ -33,12 +33,24 @@
 - **System deps:** tesseract-ocr, poppler-utils (for PDF support)
 - **OCR accuracy:** 100% on sample image (all text, all 12 table cells exact match)
 
+## Phase 3: YOLO Object Detection — Completed
+
+- **PR:** [#4](https://github.com/adityonugrohoid/cv-pipeline/pull/4), merged to main
+- **Modules:** dataset.py, train.py, evaluate.py, detect.py, visualize.py, cli.py, __main__.py
+- **Tests:** 13 passing (test_dataset.py, test_detect.py)
+- **Trained weights:** `models/best.pt` (6.2MB, YOLOv8n fine-tuned)
+- **Classes:** arrow, dimension_line, circle_x, door_swing, electrical_outlet
+- **Core dataclass:** `Detection` (class_name, confidence, bbox, center)
+- **Training:** 200 synthetic images (160 train / 40 val), 20 epochs, RTX 4060
+- **Performance:** mAP@50=0.992, mAP@50-95=0.898, all classes P>0.98 R>0.95
+- **Key fix during build:** ultralytics nests `save_dir` unpredictably — used `model.trainer.save_dir` instead of hardcoded `project/name` path to find weights
+
 ## Conventions
 
 - Type hints on all functions
 - Google-style docstrings
 - `logging` module, never `print`, in library code
-- Dataclasses for structured returns (Shape, TextBlock, TextRegion, Table, and future: Detection)
+- Dataclasses for structured returns (Shape, TextBlock, TextRegion, Table, Detection)
 - Each phase gets an OVERVIEW.md explaining it in plain layman terms
 - Each phase is independently runnable via its CLI (`python -m phaseN_*.cli`)
 
