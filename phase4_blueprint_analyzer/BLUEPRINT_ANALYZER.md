@@ -40,35 +40,50 @@ This project deliberately avoids using a single monolithic model. Instead, it de
 
 **cli.py** — The front door. Command-line interface with two modes: `analyze` (run the full pipeline on a PDF) and `generate` (create a sample blueprint PDF for testing).
 
-## What the Output Looks Like
+## Example: Input and Output
 
-The JSON report has this structure (abbreviated):
+### Input
 
-```
+The sample blueprint (`assets/sample_blueprint.pdf`) is a programmatically generated floor plan with room outlines, dimension labels, door arcs, electrical outlet symbols, and a material schedule table.
+
+![Rendered blueprint page](../docs/examples/phase4/input.png)
+
+### Output — Pipeline Report (JSON)
+
+The orchestrator runs all three stages and produces a single structured report with per-page details and an aggregated summary.
+
+```json
 {
   "pages": [
     {
       "page": 1,
-      "shapes": [ {"shape_type": "rectangle", "bbox": [...], ...}, ... ],
+      "shapes": [
+        { "shape_type": "rectangle", "bbox": [884, 1834, 733, 233], "center": [1250, 1950] },
+        { "shape_type": "circle", "bbox": [588, 684, 73, 73], "center": [624, 720] }
+      ],
       "text": {
-        "full_text": "Floor Plan — Building A\nOffice 101\n25'-0\" x 20'-0\"...",
+        "full_text": "Floor Plan \u2014 Building A\nOffice 101\n25'-0\" x 20'-0\"...",
         "text_blocks": 56,
-        "text_regions": [ {"text": "...", "bbox": [...]} ],
-        "tables": [ {"rows": 4, "cols": 3, "cells": [["Material", "Qty", "Unit"], ...]} ]
+        "tables": [{ "rows": 4, "cols": 3, "cells": [["Material", "Qty", "Unit"], ...] }]
       },
-      "symbols": [ {"class": "door_swing", "confidence": 0.94, "bbox": [...]} ],
-      "timing": {"shapes_sec": 0.25, "text_sec": 3.74, "symbols_sec": 5.53},
+      "symbols": [
+        { "class": "door_swing", "confidence": 0.94, "bbox": [362, 130, 68, 61] },
+        { "class": "dimension_line", "confidence": 0.96, "bbox": [280, 67, 52, 116] }
+      ],
+      "timing": { "shapes_sec": 0.25, "text_sec": 3.74, "symbols_sec": 5.53 },
       "errors": {}
     }
   ],
   "summary": {
     "total_pages": 1,
-    "shapes": {"total": 87, "by_type": {"rectangle": 8, "circle": 4, ...}},
-    "text": {"total_blocks": 56, "total_tables": 1},
-    "symbols": {"total": 15, "by_class": {"door_swing": 2, "dimension_line": 10, ...}}
+    "shapes": { "total": 87, "by_type": { "rectangle": 8, "circle": 4, "polygon": 75 } },
+    "text": { "total_blocks": 56, "total_tables": 1 },
+    "symbols": { "total": 15, "by_class": { "door_swing": 2, "dimension_line": 10, "arrow": 1, "electrical_outlet": 2 } }
   }
 }
 ```
+
+> Full output: [`docs/examples/phase4/output.json`](../docs/examples/phase4/output.json)
 
 ## Key Concepts Explained
 

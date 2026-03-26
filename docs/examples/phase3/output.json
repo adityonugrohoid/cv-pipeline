@@ -1,0 +1,26 @@
+[
+  {
+    "class": "electrical_outlet",
+    "confidence": 0.98,
+    "bbox": [108, 59, 43, 43],
+    "center": [129, 80]
+  },
+  {
+    "class": "dimension_line",
+    "confidence": 0.96,
+    "bbox": [280, 67, 52, 116],
+    "center": [306, 125]
+  },
+  {
+    "class": "door_swing",
+    "confidence": 0.94,
+    "bbox": [362, 130, 68, 61],
+    "center": [396, 160]
+  },
+  {
+    "class": "arrow",
+    "confidence": 0.93,
+    "bbox": [113, 471, 92, 55],
+    "center": [159, 498]
+  }
+]
