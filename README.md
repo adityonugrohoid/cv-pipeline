@@ -4,24 +4,56 @@
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-66_passing-brightgreen.svg)](#testing)
-[![Status](https://img.shields.io/badge/status-active-success.svg)](#)
 
-**A progressive computer vision pipeline for construction blueprint analysis — shape detection, OCR, YOLO symbol recognition, and a multi-stage document analyzer.**
+**Progressive CV pipeline for construction blueprints: shape detection, OCR, YOLO symbols, multi-stage analyzer**
 
-[Getting Started](#getting-started) | [Architecture](#architecture) | [Phases](#phases) | [Testing](#testing) | [API](#api-server)
+[Getting Started](#getting-started) | [Usage](#usage) | [Architecture](#architecture) | [API Reference](#api-reference)
 
 </div>
 
 ---
 
+## Table of Contents
+
+- [The Problem](#the-problem)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
+- [Demo](#demo)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+- [Usage](#usage)
+- [How It Works](#how-it-works)
+- [API Reference](#api-reference)
+- [Methodology](#methodology)
+- [Results](#results)
+- [Data Engineering](#data-engineering)
+- [Architectural Decisions](#architectural-decisions)
+- [Project Structure](#project-structure)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Related Projects](#related-projects)
+- [License](#license)
+- [Author](#author)
+
+## The Problem
+
+### Manual blueprint takeoffs are slow and error-prone
+
+Construction projects rely on blueprint takeoffs (extracting counts, dimensions, and symbol placements) to estimate cost and materials. Doing this manually from dense PDF drawings is time-consuming and inconsistent across engineers.
+
+### The Solution
+
+cv-pipeline automates takeoffs by composing three independent CV modules (contour-based shape detection, Tesseract OCR with preprocessing, and YOLOv8n symbol recognition) into a single orchestrated analyzer that processes multi-page PDFs and outputs structured JSON reports.
+
 ## Features
 
-- **Shape Detection** — Contour-based detection of rectangles, circles, triangles, and polygons using color segmentation and edge detection
-- **OCR Pipeline** — Text extraction with Tesseract, preprocessing (deskew, denoise, threshold), text region grouping, and table detection
-- **YOLO Symbol Detection** — YOLOv8n fine-tuned on construction symbols (arrows, dimension lines, door swings, electrical outlets)
-- **Blueprint Analyzer** — Multi-stage orchestrator that composes all three phases into a single pipeline with graceful failure handling
-- **FastAPI Server** — Upload a PDF blueprint and receive a structured JSON analysis report
+- **Shape Detection** - contour-based detection of rectangles, circles, triangles, and polygons using color segmentation and Canny edge fallback for monochrome images
+- **OCR Pipeline** - text extraction with Tesseract including deskew, denoise, and threshold preprocessing, plus table detection via morphological line isolation
+- **YOLO Symbol Detection** - YOLOv8n fine-tuned on 5 construction symbol classes (arrows, dimension lines, door swings, electrical outlets) with mAP@50 of 0.992
+- **Blueprint Analyzer** - multi-stage orchestrator composing all three phases per PDF page with graceful per-phase failure handling
+- **FastAPI Server** - upload a PDF blueprint via HTTP and receive a structured JSON takeoff report at `POST /analyze`
 
 ## Tech Stack
 
@@ -29,28 +61,28 @@
 |-----------|------------|
 | Language | Python 3.12+ |
 | Computer Vision | OpenCV, NumPy |
-| OCR | Tesseract (pytesseract) |
-| Object Detection | YOLOv8 (ultralytics), PyTorch |
+| OCR | Tesseract (pytesseract), pdf2image |
+| Object Detection | YOLOv8n (ultralytics), PyTorch |
 | Serving | FastAPI, Uvicorn |
-| PDF Handling | pdf2image, ReportLab |
+| Report Generation | ReportLab |
 | Testing | pytest |
 
 ## Architecture
 
 ```mermaid
 graph TD
-    PDF["Blueprint PDF"] --> CONVERT["PDF → Images<br/><code>pdf_handler.py</code>"]
+    PDF["Blueprint PDF"] --> CONVERT["pdf_handler.py<br/>PDF to images"]
 
-    CONVERT --> S["Shape Detection<br/><code>Phase 1</code>"]
-    CONVERT --> T["OCR Text Extraction<br/><code>Phase 2</code>"]
-    CONVERT --> Y["YOLO Symbol Detection<br/><code>Phase 3</code>"]
+    CONVERT --> S["phase1_shape_detection<br/>Contour detection"]
+    CONVERT --> T["phase2_ocr_pipeline<br/>Tesseract + preprocessing"]
+    CONVERT --> Y["phase3_yolo_detection<br/>YOLOv8n inference"]
 
-    S --> MERGE["Pipeline Orchestrator<br/><code>pipeline.py</code>"]
+    S --> MERGE["pipeline.py<br/>Orchestrator"]
     T --> MERGE
     Y --> MERGE
 
-    MERGE --> REPORT["JSON Takeoff Report<br/><code>report.py</code>"]
-    REPORT --> API["FastAPI Server<br/><code>:8000/analyze</code>"]
+    MERGE --> REPORT["report.py<br/>JSON takeoff report"]
+    REPORT --> API["serve.py<br/>FastAPI :8000/analyze"]
 
     style PDF fill:#0f3460,color:#fff
     style CONVERT fill:#16213e,color:#fff
@@ -62,51 +94,17 @@ graph TD
     style API fill:#16213e,color:#fff
 ```
 
-Each phase runs independently. If one stage fails (e.g., YOLO weights missing), the others still complete and their results are preserved.
+Each phase runs independently. If one stage fails (e.g., YOLO weights missing), the others still complete and their results are preserved in the report.
 
-## Phases
+## Demo
 
-### Phase 1: Shape Detection
+Phase 1 output - annotated shape detections on a synthetic blueprint:
 
-Contour-based detection for rectangles, squares, circles, triangles, and polygons. Uses color-segmented masks to isolate overlapping shapes, with Canny edge fallback for monochrome images.
+![Phase 1 output](docs/examples/phase1/output_annotated.png)
 
-```bash
-python -m phase1_shape_detection.cli detect --input assets/sample_shapes.png --output outputs/shapes.png --json outputs/shapes.json
-```
+Phase 3 output - YOLOv8n construction symbol detections:
 
-> **Deep dive:** [SHAPE_DETECTION.md](phase1_shape_detection/SHAPE_DETECTION.md) — how it works, example input/output, key concepts
-
-### Phase 2: OCR Pipeline
-
-Text extraction with Tesseract. Preprocessing pipeline: grayscale, denoise, deskew, threshold. Includes text region grouping and table detection via morphological line isolation.
-
-```bash
-python -m phase2_ocr_pipeline.cli extract --input assets/sample_text.png --json outputs/text.json
-```
-
-> **Deep dive:** [OCR_PIPELINE.md](phase2_ocr_pipeline/OCR_PIPELINE.md) — how it works, example input/output, key concepts
-
-### Phase 3: YOLO Object Detection
-
-YOLOv8n fine-tuned on 5 construction symbol classes. Synthetic dataset generation, training, evaluation (mAP@50=0.992), and inference with NMS.
-
-```bash
-python -m phase3_yolo_detection.cli generate --output data/yolo_dataset
-python -m phase3_yolo_detection.cli train --data data/yolo_dataset/data.yaml --epochs 20
-python -m phase3_yolo_detection.cli detect --input image.png --output output.png --weights models/best.pt
-```
-
-> **Deep dive:** [YOLO_DETECTION.md](phase3_yolo_detection/YOLO_DETECTION.md) — how it works, example input/output, key concepts
-
-### Phase 4: Blueprint Analyzer (Capstone)
-
-Multi-stage orchestrator that runs Phases 1-3 on each page of a PDF blueprint, producing a structured JSON takeoff report.
-
-```bash
-python -m phase4_blueprint_analyzer.cli analyze --input assets/sample_blueprint.pdf --output outputs/report.json
-```
-
-> **Deep dive:** [BLUEPRINT_ANALYZER.md](phase4_blueprint_analyzer/BLUEPRINT_ANALYZER.md) — how it works, example input/output, key concepts
+![Phase 3 output](docs/examples/phase3/output_annotated.png)
 
 ## Getting Started
 
@@ -118,31 +116,180 @@ python -m phase4_blueprint_analyzer.cli analyze --input assets/sample_blueprint.
 
 ### Installation
 
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/adityonugrohoid/cv-pipeline.git
+   cd cv-pipeline
+   ```
+
+2. Create and activate a virtual environment:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   ```
+
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+## Usage
+
 ```bash
-git clone https://github.com/adityonugrohoid/cv-pipeline.git
-cd cv-pipeline
-
-python -m venv .venv
-source .venv/bin/activate
-
-pip install -r requirements.txt
-```
-
-### Quick Start
-
-```bash
-# Generate sample assets
+# Generate sample assets for all phases
 python -m phase1_shape_detection.cli generate
 python -m phase2_ocr_pipeline.cli generate
 python -m phase3_yolo_detection.cli generate
 python -m phase4_blueprint_analyzer.cli generate
 
-# Train YOLO (~2 min on GPU, ~10 min on CPU)
+# Train the YOLO model (~2 min on GPU, ~10 min on CPU)
 python -m phase3_yolo_detection.cli train --data data/yolo_dataset/data.yaml --epochs 20
 
-# Run the full pipeline
-python -m phase4_blueprint_analyzer.cli analyze --input assets/sample_blueprint.pdf --output outputs/report.json
+# Run the full pipeline on a blueprint PDF
+python -m phase4_blueprint_analyzer.cli analyze \
+  --input assets/sample_blueprint.pdf \
+  --output outputs/report.json
 ```
+
+Run individual phases directly:
+
+```bash
+# Shape detection
+python -m phase1_shape_detection.cli detect \
+  --input assets/sample_shapes.png \
+  --output outputs/shapes.png \
+  --json outputs/shapes.json
+
+# OCR extraction
+python -m phase2_ocr_pipeline.cli extract \
+  --input assets/sample_text.png \
+  --json outputs/text.json
+
+# YOLO inference
+python -m phase3_yolo_detection.cli detect \
+  --input image.png \
+  --output output.png \
+  --weights models/best.pt
+```
+
+## How It Works
+
+### 1. Shape detection (Phase 1)
+
+Converts the input image to HSV and isolates color-segmented masks for each shape class. Contour extraction identifies candidate regions; each region is classified by vertex count (4 vertices = rectangle/square, 0 vertices with high circularity = circle) and bounding-box aspect ratio. Canny edge detection provides a fallback path for monochrome blueprint images where color segmentation yields no results.
+
+### 2. OCR pipeline (Phase 2)
+
+Applies a fixed preprocessing sequence: grayscale conversion, Gaussian denoise, Otsu threshold, and deskew via horizontal projection. Tesseract runs on the cleaned image with page-segmentation mode 6 (assume a uniform block of text). Text region grouping clusters nearby word bounding boxes into logical blocks; table detection uses morphological dilation to isolate horizontal and vertical line structures and then runs cell-level OCR on the resulting grid.
+
+### 3. YOLO symbol detection (Phase 3)
+
+A synthetic dataset generator creates labeled construction symbols (arrows, dimension lines, door swings, electrical outlets, plus a negative class) with randomized scale, rotation, and background clutter. YOLOv8n is fine-tuned for 20 epochs with the generated dataset. Inference uses the trained weights with non-maximum suppression at IoU threshold 0.45.
+
+### 4. Blueprint analyzer orchestrator (Phase 4)
+
+`pdf_handler.py` converts each PDF page to a PIL image at 150 DPI. The orchestrator runs Phases 1-3 through their respective layer wrappers (`shape_layer.py`, `text_layer.py`, `symbol_layer.py`) in sequence. Each layer returns a result dict or a typed failure object. `pipeline.py` merges all per-page results into a flat structure; `report.py` serializes the merged output to a JSON takeoff report.
+
+## API Reference
+
+Start the server:
+
+```bash
+python -m uvicorn phase4_blueprint_analyzer.serve:app --host 0.0.0.0 --port 8000
+```
+
+### Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/health` | Health check |
+| `POST` | `/analyze` | Upload PDF, receive JSON takeoff report |
+| `GET` | `/docs` | Interactive Swagger UI |
+
+### Example Request
+
+```bash
+curl -X POST http://localhost:8000/analyze \
+  -F "file=@assets/sample_blueprint.pdf"
+```
+
+### Example Response
+
+```json
+{
+  "pages": [
+    {
+      "page": 1,
+      "shapes": { "rectangles": 12, "circles": 3 },
+      "text_blocks": 8,
+      "symbols": { "door_swing": 4, "electrical_outlet": 6 }
+    }
+  ]
+}
+```
+
+## Methodology
+
+### Problem framing
+
+| Attribute | Value |
+|-----------|-------|
+| Problem Type | Multi-class object detection + OCR |
+| Target | 5 construction symbol classes |
+| Primary Metric | mAP@50 |
+| Key Challenge | No real labeled blueprint dataset; required synthetic data generation |
+
+### Training approach
+
+| Parameter | Value |
+|-----------|-------|
+| Base model | YOLOv8n (ultralytics) |
+| Dataset | Synthetic, generated by `phase3_yolo_detection/dataset.py` |
+| Epochs | 20 |
+| Validation | Hold-out split from synthetic generator |
+| Baseline | mAP@50 = 0 (untrained YOLOv8n on construction symbols) |
+
+## Results
+
+### Key metrics
+
+| Metric | Score |
+|--------|-------|
+| mAP@50 | 0.992 |
+| Test suite | 66 passing tests across 4 phases |
+
+See `docs/examples/phase3/metrics.json` for full per-class precision and recall.
+
+## Data Engineering
+
+| Attribute | Value |
+|-----------|-------|
+| Data source | Synthetic, generated programmatically |
+| Symbol classes | 5 (arrow, dimension line, door swing, electrical outlet, negative) |
+| Augmentations | Random scale, rotation, background clutter |
+| Generator | `phase3_yolo_detection/dataset.py` |
+
+The synthetic generator eliminates the need for a real annotated blueprint corpus and allows deterministic test fixture generation for the YOLO test suite.
+
+## Architectural Decisions
+
+### 1. Phase isolation with graceful failure
+
+**Decision:** Each phase (shape, OCR, YOLO) runs as an independent module. `pipeline.py` catches per-phase exceptions and records a typed failure object rather than aborting the full pipeline.
+
+**Reasoning:** YOLO weights are gitignored and must be trained locally. A first-run user who has not yet trained the model still gets shape and OCR results. This also makes each phase independently testable without requiring the full environment.
+
+### 2. Synthetic dataset over real annotations
+
+**Decision:** The YOLO training corpus is generated entirely by `dataset.py` rather than hand-annotated from real blueprints.
+
+**Reasoning:** Real annotated blueprint datasets are proprietary or absent. Synthetic generation provides full label control, deterministic fixtures for CI, and unlimited data volume at zero annotation cost. The trade-off is reduced domain realism, which the 0.992 mAP@50 result shows is acceptable for this symbol set.
+
+### 3. FastAPI over CLI-only delivery
+
+**Decision:** Phase 4 ships both a CLI entry point and a FastAPI server (`serve.py`) that accepts multipart PDF uploads.
+
+**Reasoning:** An HTTP interface makes the pipeline consumable by external tools (browser, Postman, downstream services) without requiring a Python environment on the client. The CLI stays as the primary developer interface; the server adds zero friction for integration.
 
 ## Project Structure
 
@@ -152,38 +299,42 @@ cv-pipeline/
 │   ├── detector.py               #   Shape classification (vertex count + circularity)
 │   ├── annotator.py              #   Draw detections on image
 │   ├── export.py                 #   JSON export
-│   └── cli.py                    #   CLI entrypoint
+│   ├── cli.py                    #   CLI entrypoint
+│   └── tests/                    #   17 tests
 │
 ├── phase2_ocr_pipeline/          # Tesseract OCR with preprocessing
 │   ├── preprocess.py             #   Deskew, denoise, threshold
 │   ├── ocr_engine.py             #   Tesseract wrapper
 │   ├── text_regions.py           #   Group text blocks into regions
 │   ├── table_detector.py         #   Grid detection + cell OCR
-│   └── cli.py                    #   CLI entrypoint
+│   ├── cli.py                    #   CLI entrypoint
+│   └── tests/                    #   18 tests
 │
-├── phase3_yolo_detection/        # YOLOv8 symbol detection
+├── phase3_yolo_detection/        # YOLOv8n symbol detection
 │   ├── dataset.py                #   Synthetic dataset generator
 │   ├── train.py                  #   Fine-tune YOLOv8n
 │   ├── evaluate.py               #   mAP, precision, recall
 │   ├── detect.py                 #   Inference with NMS
 │   ├── visualize.py              #   Draw detections
-│   └── cli.py                    #   CLI entrypoint
+│   ├── cli.py                    #   CLI entrypoint
+│   └── tests/                    #   13 tests
 │
 ├── phase4_blueprint_analyzer/    # Multi-stage capstone pipeline
-│   ├── pdf_handler.py            #   PDF → images
+│   ├── pdf_handler.py            #   PDF to images (150 DPI)
 │   ├── shape_layer.py            #   Phase 1 wrapper
 │   ├── text_layer.py             #   Phase 2 wrapper
 │   ├── symbol_layer.py           #   Phase 3 wrapper
 │   ├── pipeline.py               #   Orchestrator with graceful failure
 │   ├── report.py                 #   Structured JSON report
 │   ├── serve.py                  #   FastAPI server
-│   └── cli.py                    #   CLI entrypoint
+│   ├── cli.py                    #   CLI entrypoint
+│   └── tests/                    #   18 tests
 │
-├── assets/                       # Generated test images and PDFs
-├── docs/examples/                # Input/output examples embedded in phase docs
-├── models/                       # Trained model weights (gitignored)
+├── assets/                       # Sample images and PDFs for testing
+├── docs/examples/                # Per-phase input/output examples
+├── models/                       # Trained YOLO weights (gitignored)
 ├── outputs/                      # Generated reports (gitignored)
-├── reference/                    # Original interview mock test
+├── reference/                    # Original interview brief
 ├── Dockerfile
 └── requirements.txt
 ```
@@ -194,7 +345,7 @@ cv-pipeline/
 # Run all tests
 pytest -v
 
-# Run a specific phase
+# Run by phase
 pytest phase1_shape_detection/tests/ -v
 pytest phase2_ocr_pipeline/tests/ -v
 pytest phase3_yolo_detection/tests/ -v
@@ -203,44 +354,32 @@ pytest phase4_blueprint_analyzer/tests/ -v
 
 | Phase | Tests | Coverage |
 |-------|-------|----------|
-| 1 — Shape Detection | 17 | Detection accuracy, classification, JSON export |
-| 2 — OCR Pipeline | 18 | Preprocessing, text extraction, accuracy on known text |
-| 3 — YOLO Detection | 13 | Dataset generation, label format, inference, visualization |
-| 4 — Blueprint Analyzer | 18 | Pipeline orchestration, report schema, graceful failure |
+| 1 - Shape Detection | 17 | Detection accuracy, classification, JSON export |
+| 2 - OCR Pipeline | 18 | Preprocessing, text extraction, accuracy on known text |
+| 3 - YOLO Detection | 13 | Dataset generation, label format, inference, visualization |
+| 4 - Blueprint Analyzer | 18 | Pipeline orchestration, report schema, graceful failure |
 | **Total** | **66** | |
 
-## API Server
+## Deployment
 
-The capstone phase includes a FastAPI server for HTTP-based analysis.
-
-```bash
-python -m uvicorn phase4_blueprint_analyzer.serve:app --host 0.0.0.0 --port 8000
-```
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/health` | GET | Health check |
-| `/analyze` | POST | Upload PDF, receive JSON report |
-| `/docs` | GET | Interactive Swagger UI |
-
-```bash
-# Example: analyze a blueprint via curl
-curl -X POST http://localhost:8000/analyze -F "file=@assets/sample_blueprint.pdf"
-```
-
-## Docker
+### Docker
 
 ```bash
 docker build -t cv-pipeline .
 docker run -p 8000:8000 cv-pipeline
 ```
 
-## Roadmap
+The image installs Tesseract and Poppler at build time. Train YOLO weights before building, or mount a pre-trained `models/` directory:
 
-- [x] Phase 1: Shape Detection (OpenCV contours)
-- [x] Phase 2: OCR Pipeline (Tesseract + preprocessing)
-- [x] Phase 3: YOLO Object Detection (YOLOv8n fine-tuning)
-- [x] Phase 4: Blueprint Analyzer (multi-stage capstone)
+```bash
+docker run -p 8000:8000 -v $(pwd)/models:/app/models cv-pipeline
+```
+
+## Related Projects
+
+| Project | Description |
+|---------|-------------|
+| [spatial-analysis](https://github.com/adityonugrohoid/spatial-analysis) | Automated spatial analysis pipeline for architectural floor plan PDFs: element extraction, wall annotation, room segmentation, and interactive web explorer |
 
 ## License
 
@@ -249,10 +388,3 @@ This project is licensed under the [MIT License](LICENSE).
 ## Author
 
 **Adityo Nugroho** ([@adityonugrohoid](https://github.com/adityonugrohoid))
-
-## Acknowledgments
-
-- [OpenCV](https://opencv.org/) — computer vision primitives
-- [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) — text recognition engine
-- [Ultralytics YOLOv8](https://github.com/ultralytics/ultralytics) — object detection framework
-- [FastAPI](https://fastapi.tiangolo.com/) — web framework for the API server
